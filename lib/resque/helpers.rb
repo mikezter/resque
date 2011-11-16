@@ -25,11 +25,16 @@ module Resque
     # Given a string, returns a Ruby object.
     def decode(object)
       return unless object
-
+      retried = false
+      
       begin
         ::MultiJson.decode(object)
       rescue ::MultiJson::DecodeError => e
-        raise DecodeException, e.message, e.backtrace
+        raise DecodeException, e.message, e.backtrace if retried
+        require 'iconv'
+        object = Iconv.conv('UTF-8', 'WINDOWS-1252', object)
+        retried = true
+        retry
       end
     end
 
